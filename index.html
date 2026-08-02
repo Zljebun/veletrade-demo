@@ -282,6 +282,18 @@ function openNarudzbaLista(naslov, arr){
   document.getElementById("overlay").classList.add("open");
 }
 function openAktivne(){ openNarudzbaLista("Aktivne narudžbe", NARUDZBE.filter(n=>n.status!=="naplacena")); }
+function openSveNarudzbe(){ openNarudzbaLista("Sve narudžbe", NARUDZBE); }
+function openKupciLista(){
+  const ks=Object.keys(KUPCI).map(k=>({k,s:kupacStats(k)})).filter(x=>x.s.broj>0).sort((a,b)=>b.s.promet-a.s.promet);
+  const rows=ks.map(({k,s})=>`<tr onclick="openKupac('${k}')">
+      <td><b>${KUPCI[k].naziv}</b></td><td class="muted">${KUPCI[k].grad}</td><td class="num">${s.broj}</td><td class="num">${eur(s.promet)}</td></tr>`).join("");
+  document.getElementById("modal").innerHTML=`
+    <div class="mhead"><div><h2>Aktivni kupci</h2><div style="font-size:13px;opacity:.9;margin-top:4px">${ks.length} kupaca · klik za karticu</div></div><div class="x" onclick="closeModal()">×</div></div>
+    <div class="mbody"><table class="lines">
+      <thead><tr><th>Kupac</th><th>Grad</th><th class="num">Narudžbi</th><th class="num">Promet</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+  document.getElementById("overlay").classList.add("open");
+}
 function openZaIsporuku(){ openNarudzbaLista("Za isporuku", NARUDZBE.filter(n=>["nova","priprema","kasni"].includes(n.status))); }
 function openNiskoStanje(){
   const arr=Object.values(ARTIKLI).filter(a=>a.stanje<a.min).sort((x,y)=>(x.stanje-x.min)-(y.stanje-y.min));
@@ -384,9 +396,9 @@ function renderIzvjestaji(){
   document.getElementById("view").innerHTML=`
     <div class="kpis">
       <div class="kpi"><div class="big">${eur(promet)}</div><div class="lab">Ukupan promet (prikazano)</div></div>
-      <div class="kpi"><div class="big">${broj}</div><div class="lab">Narudžbi</div></div>
+      <div class="kpi clk" onclick="openSveNarudzbe()"><div class="big">${broj}</div><div class="lab">Narudžbi</div></div>
       <div class="kpi"><div class="big">${eur(prosjek)}</div><div class="lab">Prosječna narudžba</div></div>
-      <div class="kpi"><div class="big">${brKupaca}</div><div class="lab">Aktivnih kupaca</div></div>
+      <div class="kpi clk" onclick="openKupciLista()"><div class="big">${brKupaca}</div><div class="lab">Aktivnih kupaca</div></div>
     </div>
     <div class="grid2">
       <div class="panel"><h3>Promet po kupcu</h3>${kupacBars}</div>
