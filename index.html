@@ -22,7 +22,13 @@
   .toolbar{display:flex;align-items:center;gap:6px;padding:0 20px;border-bottom:1px solid var(--line);background:#fff;flex-wrap:wrap}
   .tab{padding:14px 14px 12px;font-size:15px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;cursor:pointer}
   .tab.active{color:var(--brand);border-bottom-color:var(--accent)}
-  .demo-flag{margin-left:auto;background:#fef9c3;color:#854d0e;border:1px solid #fde68a;padding:4px 10px;border-radius:6px;font-size:12px;align-self:center}
+  .demo-flag{margin-left:10px;background:#fef9c3;color:#854d0e;border:1px solid #fde68a;padding:4px 10px;border-radius:6px;font-size:12px;align-self:center}
+  .newbtn{margin-left:auto;background:var(--action);color:#fff;border:0;padding:8px 13px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;align-self:center}
+  .newbtn:hover{filter:brightness(1.08)}
+  .frow{margin-bottom:12px;display:flex;flex-direction:column;gap:4px}
+  .frow label{font-size:13px;color:var(--muted);font-weight:600}
+  .frow select,.lines select,.lines input{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:var(--text)}
+  .frow select:focus,.lines select:focus,.lines input:focus{outline:none;border-color:var(--brand2)}
   .wrap{padding:18px 20px}
   .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
   .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px}
@@ -105,6 +111,7 @@
   <div class="tab" data-view="zalihe" onclick="setView('zalihe')">Zalihe</div>
   <div class="tab" data-view="kupci" onclick="setView('kupci')">Kupci</div>
   <div class="tab" data-view="izvjestaji" onclick="setView('izvjestaji')">Izvještaji</div>
+  <button class="newbtn" onclick="openNovaNarudzba()">+ Nova narudžba</button>
   <span class="demo-flag">DEMO — izmišljeni podaci</span>
 </div>
 
@@ -354,6 +361,45 @@ function renderIzvjestaji(){
     </div>
     <div class="panel"><h3>Promet po danu</h3><div class="cols">${cols}</div></div>
     <div class="panel"><h3>Za nabavku (ispod minimuma)</h3>${nabRows}</div>`;
+}
+
+// ---- Nova narudžba --------------------------------------------------------
+function todayStr(){const d=new Date();return String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")+"."+d.getFullYear();}
+let nova={kupac:"", stavke:[["A1",1]]};
+function openNovaNarudzba(){ nova={kupac:Object.keys(KUPCI)[0], stavke:[["A1",1]]}; renderNova(); document.getElementById("overlay").classList.add("open"); }
+function renderNova(){
+  const kupOpts=Object.keys(KUPCI).map(k=>`<option value="${k}"${nova.kupac===k?" selected":""}>${KUPCI[k].naziv}</option>`).join("");
+  const artOpts=sel=>Object.keys(ARTIKLI).map(a=>`<option value="${a}"${sel===a?" selected":""}>${ARTIKLI[a].n}</option>`).join("");
+  const rows=nova.stavke.map((s,idx)=>`
+    <tr>
+      <td><select onchange="nova.stavke[${idx}][0]=this.value;renderNova()"><option value="">— artikal —</option>${artOpts(s[0])}</select></td>
+      <td class="num"><input type="number" min="1" value="${s[1]}" style="width:72px" oninput="nova.stavke[${idx}][1]=Math.max(1,parseInt(this.value)||1);renderNova()"></td>
+      <td class="num">${s[0]?eur(ARTIKLI[s[0]].cijena*s[1]):"—"}</td>
+      <td><span class="link" onclick="nova.stavke.splice(${idx},1);if(!nova.stavke.length)nova.stavke=[['',1]];renderNova()">ukloni</span></td>
+    </tr>`).join("");
+  const tot=nova.stavke.reduce((s,[a,q])=>s+(a?ARTIKLI[a].cijena*q:0),0);
+  document.getElementById("modal").innerHTML=`
+    <div class="mhead"><div><h2>Nova narudžba</h2><div style="font-size:13px;opacity:.9;margin-top:4px">${todayStr()}</div></div><div class="x" onclick="closeModal()">×</div></div>
+    <div class="mbody">
+      <div class="frow"><label>Kupac</label><select onchange="nova.kupac=this.value">${kupOpts}</select></div>
+      <div class="sec-title">Stavke</div>
+      <table class="lines">
+        <thead><tr><th>Artikal</th><th class="num">Količina</th><th class="num">Ukupno</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr><td colspan="2" class="num"><b>Ukupno</b></td><td class="num"><b>${eur(tot)}</b></td><td></td></tr></tfoot>
+      </table>
+      <button class="secondary" style="margin-top:10px" onclick="nova.stavke.push(['',1]);renderNova()">+ Dodaj stavku</button>
+    </div>
+    <div class="actions"><button class="primary" onclick="createNarudzba()">Kreiraj narudžbu</button><span class="hint">Nova narudžba dobija status „Nova".</span></div>`;
+}
+function createNarudzba(){
+  const stavke=nova.stavke.filter(([a,q])=>a&&q>0);
+  if(!nova.kupac||!stavke.length){alert("Izaberite kupca i bar jednu stavku.");return;}
+  const maxN=Math.max(...NARUDZBE.map(n=>+n.id.split("-")[1]));
+  const id="N-"+(maxN+1);
+  NARUDZBE.unshift({id,kupac:nova.kupac,datum:todayStr(),status:"nova",stavke});
+  setView("narudzbe");
+  openNarudzba(id);
 }
 
 setView("narudzbe");
