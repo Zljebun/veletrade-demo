@@ -27,8 +27,10 @@
   .newbtn:hover{filter:brightness(1.08)}
   .frow{margin-bottom:12px;display:flex;flex-direction:column;gap:4px}
   .frow label{font-size:13px;color:var(--muted);font-weight:600}
-  .frow select,.lines select,.lines input{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:var(--text)}
-  .frow select:focus,.lines select:focus,.lines input:focus{outline:none;border-color:var(--brand2)}
+  .frow select,.frow input,.lines select,.lines input{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:var(--text)}
+  .frow select:focus,.frow input:focus,.lines select:focus,.lines input:focus{outline:none;border-color:var(--brand2)}
+  .viewhead{display:flex;align-items:center;margin-bottom:12px}
+  .viewhead h3{margin:0;font-size:15px;color:var(--brand)}
   .wrap{padding:18px 20px}
   .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
   .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px}
@@ -325,6 +327,7 @@ function renderZalihe(){
     return `<tr><td><b>${a.n}</b></td><td class="num ${cls}">${a.stanje}</td><td class="num muted">${a.min}</td><td class="num">${eur(a.cijena)}</td><td>${oznaka}</td></tr>`;
   }).join("");
   document.getElementById("view").innerHTML=`
+    <div class="viewhead"><h3>Zalihe</h3><button class="newbtn" onclick="openNoviArtikal()">+ Novi artikal</button></div>
     <p class="hint" style="margin:0 0 12px">Stanje se automatski umanjuje kad narudžba pređe u „Isporučena".</p>
     <table class="tbl">
       <thead><tr><th>Artikal</th><th class="num">Na stanju</th><th class="num">Minimum</th><th class="num">Cijena</th><th>Status</th></tr></thead>
@@ -345,6 +348,7 @@ function renderKupci(){
       <td class="num">${s.broj}</td><td class="num">${eur(s.promet)}</td></tr>`;
   }).join("");
   document.getElementById("view").innerHTML=`
+    <div class="viewhead"><h3>Kupci</h3><button class="newbtn" onclick="openNoviKupac()">+ Novi kupac</button></div>
     <table class="tbl">
       <thead><tr><th>Kupac</th><th>Grad</th><th class="num">Narudžbi</th><th class="num">Ukupan promet</th></tr></thead>
       <tbody>${rows}</tbody>
@@ -474,6 +478,56 @@ function createNarudzba(){
   NARUDZBE.unshift({id,kupac:nova.kupac,datum:todayStr(),status:"nova",stavke});
   setView("narudzbe");
   openNarudzba(id);
+}
+
+// ---- Novi kupac / novi artikal --------------------------------------------
+function openNoviKupac(){
+  document.getElementById("modal").innerHTML=`
+    <div class="mhead"><div><h2>Novi kupac</h2></div><div class="x" onclick="closeModal()">×</div></div>
+    <div class="mbody">
+      <div class="frow"><label>Naziv *</label><input id="k_naziv" placeholder="npr. Market Sunce"></div>
+      <div class="frow"><label>Grad</label><input id="k_grad" placeholder="npr. Banja Luka"></div>
+      <div class="frow"><label>Telefon</label><input id="k_tel" placeholder="+387 ..."></div>
+    </div>
+    <div class="actions"><button class="primary" onclick="createKupac()">Sačuvaj kupca</button></div>`;
+  document.getElementById("overlay").classList.add("open");
+  setTimeout(()=>document.getElementById("k_naziv").focus(),40);
+}
+function createKupac(){
+  const naziv=(document.getElementById("k_naziv").value||"").trim();
+  if(!naziv){document.getElementById("k_naziv").focus();return;}
+  const grad=(document.getElementById("k_grad").value||"").trim()||"—";
+  const tel=(document.getElementById("k_tel").value||"").trim()||"—";
+  const nums=Object.keys(KUPCI).map(k=>+k.slice(1)).filter(x=>!isNaN(x));
+  const id="K"+(Math.max(0,...nums)+1);
+  KUPCI[id]={naziv,grad,tel};
+  setView("kupci");
+  openKupac(id);
+}
+function openNoviArtikal(){
+  document.getElementById("modal").innerHTML=`
+    <div class="mhead"><div><h2>Novi artikal</h2></div><div class="x" onclick="closeModal()">×</div></div>
+    <div class="mbody">
+      <div class="frow"><label>Naziv *</label><input id="a_naziv" placeholder="npr. Riža 1kg (10/1)"></div>
+      <div class="frow"><label>Cijena (KM) *</label><input id="a_cijena" type="number" min="0" step="0.01" placeholder="0.00"></div>
+      <div class="frow"><label>Na stanju</label><input id="a_stanje" type="number" min="0" value="0"></div>
+      <div class="frow"><label>Minimum</label><input id="a_min" type="number" min="0" value="10"></div>
+    </div>
+    <div class="actions"><button class="primary" onclick="createArtikal()">Sačuvaj artikal</button></div>`;
+  document.getElementById("overlay").classList.add("open");
+  setTimeout(()=>document.getElementById("a_naziv").focus(),40);
+}
+function createArtikal(){
+  const naziv=(document.getElementById("a_naziv").value||"").trim();
+  const cijena=parseFloat(document.getElementById("a_cijena").value);
+  if(!naziv||isNaN(cijena)||cijena<0){alert("Unesite naziv i cijenu.");return;}
+  const stanje=Math.max(0,parseInt(document.getElementById("a_stanje").value)||0);
+  const min=Math.max(0,parseInt(document.getElementById("a_min").value)||0);
+  const nums=Object.keys(ARTIKLI).map(k=>+k.slice(1)).filter(x=>!isNaN(x));
+  const id="A"+(Math.max(0,...nums)+1);
+  ARTIKLI[id]={n:naziv,cijena,stanje,min};
+  closeModal();
+  setView("zalihe");
 }
 
 setView("narudzbe");
