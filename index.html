@@ -181,7 +181,14 @@ function moveStatus(id, dir){
   const i=flowIdx(n.status), ni=i+dir;
   if(ni<0||ni>=FLOW.length) return;
   const from=FLOW[i], to=FLOW[ni];
-  if(to==="isporucena" && !n.skinuto){ stockDelta(n,-1); n.skinuto=true; }
+  if(to==="isporucena" && !n.skinuto){
+    const manjak=n.stavke.filter(([a,q])=>ARTIKLI[a].stanje<q);
+    if(manjak.length){
+      alert("Nedovoljno na stanju za isporuku:\n\n• "+manjak.map(([a,q])=>`${ARTIKLI[a].n} — traži ${q}, na stanju ${ARTIKLI[a].stanje}`).join("\n• ")+"\n\nDopunite zalihe pa pokušajte ponovo.");
+      return;
+    }
+    stockDelta(n,-1); n.skinuto=true;
+  }
   if(from==="isporucena" && dir<0 && n.skinuto){ stockDelta(n,1); n.skinuto=false; }
   n.status=to;
   rerender();
@@ -252,11 +259,14 @@ function openNarudzba(id){
   const canBack = i>0 && n.status!=="naplacena" || (i>0);
   const nextLabel = canFwd?STATUS[FLOW[i+1]][0]:"";
   const willReduce = canFwd && FLOW[i+1]==="isporucena" && !n.skinuto;
+  const manjak = willReduce ? n.stavke.filter(([a,q])=>ARTIKLI[a].stanje<q) : [];
   const actions = `
     <div class="actions">
       ${canFwd?`<button class="primary" onclick="moveStatus('${n.id}',1)">Označi: ${nextLabel}</button>`:`<span class="hint">Narudžba je naplaćena (završeno).</span>`}
       ${i>0?`<button class="secondary" onclick="moveStatus('${n.id}',-1)">← Vrati</button>`:``}
-      ${willReduce?`<span class="hint warn">Isporuka će umanjiti zalihe za stavke narudžbe.</span>`:``}
+      ${willReduce ? (manjak.length
+        ? `<span class="hint warn">Nedovoljno na stanju: ${manjak.map(([a,q])=>`${ARTIKLI[a].n} (${ARTIKLI[a].stanje}/${q})`).join(", ")}</span>`
+        : `<span class="hint warn">Isporuka će umanjiti zalihe za stavke narudžbe.</span>`) : ``}
     </div>`;
   document.getElementById("modal").innerHTML=`
     <div class="mhead">
