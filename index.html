@@ -66,7 +66,7 @@
   .mhead{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:16px 20px;display:flex;align-items:flex-start;gap:12px}
   .mhead h2{margin:0;font-size:19px}
   .mhead .x{margin-left:auto;cursor:pointer;font-size:22px;opacity:.85}
-  .mbody{padding:18px 20px}
+  .mbody{padding:18px 20px;overflow-x:auto}
   .kv{display:flex;font-size:14.5px;padding:4px 0}
   .kv .k{width:130px;color:var(--muted)}
   .lines{width:100%;border-collapse:collapse;margin-top:12px;font-size:14px}
@@ -99,6 +99,12 @@
   .colbar .cnt{font-size:12px;font-weight:700;color:var(--brand);margin-bottom:5px}
   .colbar .barv{width:66%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--brand2),var(--brand));min-height:3px}
   .colbar .clab{font-size:11px;color:var(--muted);margin-top:6px}
+  @media(max-width:560px){
+    .overlay{padding:14px 8px}
+    .mbody{padding:14px 12px}
+    .lines th,.lines td{padding:7px 8px;font-size:13px}
+    .kv .k{width:110px}
+  }
 </style>
 </head>
 <body>
